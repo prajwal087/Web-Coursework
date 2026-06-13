@@ -21,3 +21,16 @@ class Analyst(UserMixin):
         return bcrypt.checkpw(
             password.encode('utf-8'), self.password_hash.encode('utf-8')
         )
+    @staticmethod
+    def from_row(row):
+        if row is None:
+            return None
+        return Analyst(
+            id=row['id'],
+            username=row['username'],
+            email=row['email'],
+            password_hash=row['password_hash'],
+            role=row['role'],
+            created_at=row.get('created_at')
+        )
+
