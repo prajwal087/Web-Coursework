@@ -7,4 +7,18 @@ class Playbook:
         self.name = name
         self.description = description
         self.steps = steps
+        self.created_at = created_at
+
+    @staticmethod
+    def from_row(row):
+        if row is None:
+            return None
+        return Playbook(
+            id=row['id'],
+            name=row['name'],
+            description=row['description'],
+            steps=row['steps'],
+            created_at=row.get('created_at')
+        )
+
         
