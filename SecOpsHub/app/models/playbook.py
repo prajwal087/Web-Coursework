@@ -7,4 +7,4 @@ class Playbook:
         self.name = name
         self.description = description
         self.steps = steps
-        self.created_at = created_at
+        
