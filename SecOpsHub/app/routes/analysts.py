@@ -25,3 +25,20 @@ def list_view():
     finally:
         conn.close()
     return render_template('analysts/list.html', analysts=analysts)
+@analysts_bp.route('/<int:id>')
+@login_required
+def view(id):
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT * FROM analysts WHERE id = %s", (id,))
+            analyst = Analyst.from_row(cur.fetchone())
+        if analyst is None:
+            flash('Analyst not found', 'error')
+            return redirect(url_for('analysts.list_view'))
+        with conn.cursor() as cur:
+            cur.execute("SELECT * FROM cases WHERE analyst_id = %s ORDER BY created_at DESC", (id,))
+            analyst.cases = [Case.from_row(r) for r in cur.fetchall()]
+    finally:
+        conn.close()
+    return render_template('analysts/view.html', analyst=analyst)
