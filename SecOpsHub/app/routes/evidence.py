@@ -88,3 +88,62 @@ def new():
     return render_template('evidence/form.html', evidence=None, cases=cases,
                            preselected_case_id=case_id)
 
+
+@evidence_bp.route('/<int:id>/edit', methods=['GET', 'POST'])
+@login_required
+def edit(id):
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT * FROM evidence WHERE id = %s", (id,))
+            evidence = Evidence.from_row(cur.fetchone())
+        if evidence is None:
+            flash('Evidence not found', 'error')
+            return redirect(url_for('evidence.list'))
+        if request.method == 'POST':
+            errors = validate_evidence(request.form)
+            if errors:
+                flash_errors(errors)
+                with conn.cursor() as cur:
+                    cur.execute("SELECT * FROM cases")
+                    cases = [Case.from_row(r) for r in cur.fetchall()]
+                return render_template('evidence/form.html', evidence=evidence, cases=cases,
+                                       preselected_case_id=evidence.case_id)
+            title = request.form['title'].strip()
+            content = request.form['content'].strip()
+            source = request.form.get('source', 'manual').strip()
+            case_id = request.form['case_id'].strip()
+            with conn.cursor() as cur:
+                cur.execute(
+                    "UPDATE evidence SET title=%s, content=%s, source=%s, case_id=%s WHERE id=%s",
+                    (title, content, source, case_id, id)
+                )
+            conn.commit()
+            log_activity('evidence_updated', f'Evidence #{id}: {title}')
+            flash('Evidence updated', 'success')
+            return redirect(url_for('evidence.view', id=id))
+        with conn.cursor() as cur:
+            cur.execute("SELECT * FROM cases")
+            cases = [Case.from_row(r) for r in cur.fetchall()]
+    finally:
+        conn.close()
+    return render_template('evidence/form.html', evidence=evidence, cases=cases,
+                           preselected_case_id=evidence.case_id)
+
+
+@evidence_bp.route('/<int:id>/delete', methods=['POST'])
+@login_required
+def delete(id):
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT case_id FROM evidence WHERE id = %s", (id,))
+            row = cur.fetchone()
+            case_id = row['case_id'] if row else None
+            cur.execute("DELETE FROM evidence WHERE id = %s", (id,))
+        conn.commit()
+        log_activity('evidence_deleted', f'Evidence #{id}')
+        flash('Evidence deleted', 'success')
+    finally:
+        conn.close()
+    return redirect(url_for('evidence.list'))
