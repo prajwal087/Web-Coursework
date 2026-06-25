@@ -45,3 +45,35 @@ def index():
             total_playbooks = cur.fetchone()['cnt']
             cur.execute("SELECT COUNT(*) AS cnt FROM analysts")
             total_analysts = cur.fetchone()['cnt']
+
+            cur.execute("""
+                SELECT c.*, a.id AS analyst_id2, a.username, a.email, a.role, a.created_at AS analyst_created_at
+                FROM cases c JOIN analysts a ON c.analyst_id = a.id
+                ORDER BY c.created_at DESC LIMIT 5
+            """)
+            recent_rows = cur.fetchall()
+            recent_cases = []
+            for r in recent_rows:
+                case = Case.from_row(r)
+                analyst = Analyst(
+                    id=r['analyst_id2'], username=r['username'], email=r['email'],
+                    password_hash='', role=r['role'], created_at=r['analyst_created_at']
+                )
+                case.analyst = analyst
+                recent_cases.append(case)
+    finally:
+        conn.close()
+
+    return render_template('dashboard/index.html',
+                           total_cases=total_cases,
+                           open_cases=open_cases,
+                           in_progress_cases=in_progress_cases,
+                           closed_cases=closed_cases,
+                           critical_cases=critical_cases,
+                           high_cases=high_cases,
+                           total_evidence=total_evidence,
+                           total_playbooks=total_playbooks,
+                           total_analysts=total_analysts,
+                           recent_cases=recent_cases,
+                           severity_counts=severity_counts)
+
