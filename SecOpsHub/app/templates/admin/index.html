@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}Admin{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title"><i class="ti ti-shield-lock" style="font-size:1.3rem;color:var(--accent-purple);margin-right:0.35rem;vertical-align:middle"></i>Admin Panel</h1>
+</div>
+
+<div class="stats-grid">
+  <div class="stat-card stat-purple">
+    <div class="stat-label"><i class="ti ti-users stat-icon"></i> Analysts</div>
+    <div class="stat-value">{{ total_analysts }}</div>
+  </div>
+  <div class="stat-card stat-green">
+    <div class="stat-label"><i class="ti ti-folder stat-icon"></i> Cases</div>
+    <div class="stat-value">{{ total_cases }}</div>
+  </div>
+  <div class="stat-card stat-cyan">
+    <div class="stat-label"><i class="ti ti-file-text stat-icon"></i> Evidence</div>
+    <div class="stat-value">{{ total_evidence }}</div>
+  </div>
+  <div class="stat-card stat-amber">
+    <div class="stat-label"><i class="ti ti-book-2 stat-icon"></i> Playbooks</div>
+    <div class="stat-value">{{ total_playbooks }}</div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <h2 class="card-title"><i class="ti ti-users" style="margin-right:0.3rem"></i> Analysts</h2>
+    <a href="{{ url_for('analysts.new') }}" class="btn btn-primary btn-sm">+ Add</a>
+  </div>
+  {% if analysts %}
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Username</th>
+        <th>Email</th>
+        <th>Role</th>
+        <th>Cases</th>
+        <th>Joined</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for a in analysts %}
+      <tr>
+        <td><a href="{{ url_for('analysts.view', id=a.id) }}">#{{ a.id }}</a></td>
+        <td><a href="{{ url_for('analysts.view', id=a.id) }}">{{ a.username }}</a></td>
+        <td>{{ a.email }}</td>
+        <td><span class="badge badge-{{ a.role }}">{{ a.role }}</span></td>
+        <td>{{ a.case_count }}</td>
+        <td>{{ a.created_at.strftime('%Y-%m-%d') if a.created_at else 'N/A' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <h2 class="card-title"><i class="ti ti-activity" style="margin-right:0.3rem"></i> Recent Activity</h2>
+  </div>
+  {% if activities %}
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Time</th>
+        <th>Analyst</th>
+        <th>Action</th>
+        <th>Details</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for act in activities %}
+      <tr>
+        <td style="white-space:nowrap">{{ act.created_at.strftime('%Y-%m-%d %H:%M') if act.created_at else 'N/A' }}</td>
+        <td>{{ act.username }}</td>
+        <td><code>{{ act.action }}</code></td>
+        <td style="color:var(--text-muted);font-size:0.8rem">{{ act.details or '' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-state-text">No activity recorded yet</div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
