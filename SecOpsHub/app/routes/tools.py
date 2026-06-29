@@ -3,10 +3,8 @@ import socket
 
 import requests
 from flask import Blueprint, render_template, request, redirect, url_for, flash
-from flask_login import login_required
-from app.models.evidence import Evidence
-from app.models.case import Case
-from app.database import get_db
+from flask_login import login_required, current_user
+from app.services import EvidenceService
 
 tools_bp = Blueprint('tools', __name__, url_prefix='/tools')
 
@@ -29,13 +27,7 @@ def _is_private_host(host):
 @tools_bp.route('/')
 @login_required
 def index():
-    conn = get_db()
-    try:
-        with conn.cursor() as cur:
-            cur.execute("SELECT * FROM cases")
-            cases = [Case.from_row(r) for r in cur.fetchall()]
-    finally:
-        conn.close()
+    cases = EvidenceService.get_all_cases_basic()
     return render_template('tools/index.html', cases=cases)
 
 
@@ -165,6 +157,119 @@ def cve_feed():
                            case_id=case_id)
 
 
+@tools_bp.route('/email-header-analyzer', methods=['POST'])
+@login_required
+def email_header_analyzer():
+    raw = request.form.get('headers', '')
+    case_id = request.form.get('case_id')
+    result = {}
+    for line in raw.splitlines():
+        line = line.strip()
+        if ':' not in line:
+            continue
+        key, _, val = line.partition(':')
+        key = key.strip().lower()
+        val = val.strip()
+        if key in ('from', 'to', 'subject', 'date', 'message-id', 'return-path'):
+            result[key] = val
+        if key == 'authentication-results':
+            spf = dkim = dmarc = None
+            for part in val.replace(';', ' ').split():
+                part = part.strip()
+                if part.startswith('spf='):
+                    spf = part.split('=')[1]
+                elif part.startswith('dkim='):
+                    dkim = part.split('=')[1]
+                elif part.startswith('dmarc='):
+                    dmarc = part.split('=')[1]
+            result['spf'] = spf or 'neutral'
+            result['dkim'] = dkim or 'neutral'
+            result['dmarc'] = dmarc or 'neutral'
+    received_headers = []
+    for line in raw.splitlines():
+        if line.strip().lower().startswith('received:'):
+            received_headers.append(line.strip())
+    result['received_count'] = len(received_headers)
+    result['received_headers'] = received_headers[:10]
+    return render_template('tools/email_header.html',
+                           result=result,
+                           case_id=case_id)
+
+
+@tools_bp.route('/hash-identifier', methods=['POST'])
+@login_required
+def hash_identifier():
+    raw_hash = request.form.get('hash', '').strip()
+    case_id = request.form.get('case_id')
+    h = raw_hash.replace(' ', '')
+    length = len(h)
+    is_hex = all(c in '0123456789abcdefABCDEF' for c in h)
+    prefix = h.split('$')[0] if '$' in h else ''
+    candidates = []
+
+    if is_hex:
+        candidates.append(('CRC-32', 8, 6))
+        candidates.append(('CRC-32B', 8, 6))
+        candidates.append(('ADLER-32', 8, 6))
+        candidates.append(('MD5', 32, 4))
+        candidates.append(('SHA-1', 40, 6))
+        candidates.append(('SHA-256', 64, 8))
+        candidates.append(('SHA-384', 96, 12))
+        candidates.append(('SHA-512', 128, 16))
+        candidates.append(('SHA-512/256', 64, 8))
+        candidates.append(('SHA3-256', 64, 8))
+        candidates.append(('SHA3-512', 128, 16))
+        candidates.append(('BLAKE2b-256', 64, 8))
+        candidates.append(('BLAKE2b-512', 128, 16))
+        candidates.append(('RIPEMD-160', 40, 6))
+        candidates.append(('Whirlpool', 128, 16))
+        candidates.append(('NTLM', 32, 4))
+        candidates.append(('LM', 32, 4))
+        candidates.append(('MySQL 5.x', 41, 5))
+        candidates.append(('SHA-256 (Unix)', 64, 8))
+        candidates.append(('Snefru-256', 64, 8))
+        candidates.append(('GOST R 34.11-94', 64, 8))
+        matching = [(name, l, s) for name, l, s in candidates if l == length]
+        matching.sort(key=lambda x: -x[2])
+        result = {
+            'hash': raw_hash,
+            'length': length,
+            'is_hex': True,
+            'possible_types': [name for name, l, s in matching] if matching else ['Unknown']
+        }
+    elif raw_hash.startswith('$2y$') or raw_hash.startswith('$2b$') or raw_hash.startswith('$2a$'):
+        result = {
+            'hash': raw_hash[:30] + '...' if len(raw_hash) > 30 else raw_hash,
+            'length': length,
+            'is_hex': False,
+            'possible_types': ['bcrypt $2*$']
+        }
+    elif raw_hash.startswith('$argon2'):
+        result = {
+            'hash': raw_hash[:30] + '...' if len(raw_hash) > 30 else raw_hash,
+            'length': length,
+            'is_hex': False,
+            'possible_types': ['Argon2']
+        }
+    elif len(h) == 16 and not is_hex:
+        result = {
+            'hash': raw_hash,
+            'length': length,
+            'is_hex': False,
+            'possible_types': ['MySQL < 4.1', 'DES (Unix)']
+        }
+    else:
+        result = {
+            'hash': raw_hash,
+            'length': length,
+            'is_hex': False,
+            'possible_types': ['Unknown format']
+        }
+    return render_template('tools/hash_identifier.html',
+                           result=result,
+                           case_id=case_id)
+
+
 @tools_bp.route('/save-evidence', methods=['POST'])
 @login_required
 def save_evidence():
@@ -175,18 +280,11 @@ def save_evidence():
     if not case_id:
         flash('No case selected', 'error')
         return redirect(url_for('tools.index'))
-    conn = get_db()
     try:
-        with conn.cursor() as cur:
-            cur.execute(
-                "INSERT INTO evidence (title, content, source, case_id) VALUES (%s, %s, %s, %s)",
-                (title, content, source, case_id)
-            )
-        conn.commit()
+        EvidenceService.add_evidence(case_id, title, content, source)
         flash('Evidence saved to case', 'success')
-    finally:
-        conn.close()
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f"Error saving evidence from tools: {str(e)}")
+        flash('An error occurred while saving evidence', 'error')
     return redirect(url_for('cases.view', id=case_id))
-
-
-
