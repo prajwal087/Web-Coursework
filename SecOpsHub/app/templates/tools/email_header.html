@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Email Header Analysis{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title"><i class="ti ti-mail" style="font-size:1.3rem;color:var(--accent);margin-right:0.4rem;vertical-align:middle"></i>Email Header Analysis</h1>
+  <div class="actions">
+    <a href="{{ url_for('tools.index') }}" class="btn btn-secondary">Back to Tools</a>
+  </div>
+</div>
+
+{% if result %}
+<div class="result-card">
+  <div class="result-title"><i class="ti ti-info-circle" style="vertical-align:middle;margin-right:0.3rem"></i>Parsed Headers</div>
+
+  {% if result.get('from') or result.get('to') or result.get('subject') %}
+  <div style="margin-bottom:1.5rem">
+    <h3 style="color:var(--text-primary);margin-bottom:0.75rem;font-size:0.95rem">&#128231; Envelope</h3>
+    {% for key in ['from', 'to', 'subject', 'date', 'message-id', 'return-path'] %}
+    {% if result.get(key) %}
+    <div class="result-item">
+      <span class="result-key">{{ key }}</span>
+      <span class="result-value">{{ result[key] }}</span>
+    </div>
+    {% endif %}
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if result.get('spf') or result.get('dkim') or result.get('dmarc') %}
+  <div style="margin-bottom:1.5rem">
+    <h3 style="color:var(--text-primary);margin-bottom:0.75rem;font-size:0.95rem">&#128737; Authentication Results</h3>
+    {% for key in ['spf', 'dkim', 'dmarc'] %}
+    {% if result.get(key) %}
+    {% set status = result[key] %}
+    {% set color = 'var(--severity-low)' if status == 'pass' else 'var(--severity-critical)' if status == 'fail' else 'var(--severity-medium)' %}
+    <div class="result-item">
+      <span class="result-key">{{ key }}</span>
+      <span class="result-value" style="color:{{ color }};font-weight:600">{{ status }}</span>
+    </div>
+    {% endif %}
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if result.get('received_headers') %}
+  <div>
+    <h3 style="color:var(--text-primary);margin-bottom:0.75rem;font-size:0.95rem">&#128279; Received Chain ({{ result.received_count }})</h3>
+    {% for rh in result.received_headers %}
+    <div class="result-item" style="border-left:2px solid var(--border-subtle);padding-left:0.75rem;margin-bottom:0.5rem">
+      <span class="result-value" style="font-size:0.8rem;font-family:monospace;word-break:break-all">{{ rh }}</span>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+
+{% if case_id %}
+<form method="POST" action="{{ url_for('tools.save_evidence') }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input type="hidden" name="case_id" value="{{ case_id }}">
+  <input type="hidden" name="source" value="email_header_analyzer">
+  <input type="hidden" name="title" value="Email Header Analysis">
+  <input type="hidden" name="content" value="{% for key in ['from','to','subject','date','message-id','return-path','spf','dkim','dmarc'] %}{% if result.get(key) %}{{ key }}: {{ result[key] }}
+{% endif %}{% endfor %}Received headers ({{ result.received_count }}):
+{% for rh in result.received_headers %}{{ rh }}
+{% endfor %}">
+  <div class="tool-actions">
+    <button type="submit" class="btn btn-primary"><i class="ti ti-device-floppy" style="font-size:1rem;vertical-align:middle;margin-right:0.25rem"></i>Save as Evidence</button>
+  </div>
+</form>
+{% endif %}
+{% endblock %}
