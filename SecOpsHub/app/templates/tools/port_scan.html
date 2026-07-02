@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Port Scan{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title"><i class="ti ti-cloud-network" style="font-size:1.3rem;color:var(--accent);margin-right:0.4rem;vertical-align:middle"></i>Port Scan: {{ host }}</h1>
+  <div class="actions">
+    <a href="{{ url_for('tools.index') }}" class="btn btn-secondary">Back to Tools</a>
+  </div>
+</div>
+
+<div class="result-card">
+  <div class="result-title"><i class="ti ti-network" style="vertical-align:middle;margin-right:0.3rem"></i>Scan Results</div>
+  {% for r in results %}
+  <div class="port-result {{ 'open' if r.open else 'closed' }}">
+    <span class="port-number">Port {{ r.port }}</span>
+    <span class="port-status">{{ 'OPEN' if r.open else 'closed' }}</span>
+  </div>
+  {% endfor %}
+</div>
+
+{% if case_id %}
+{% set content_lines = [] %}
+{% for r in results %}{% set _ = content_lines.append('Port ' ~ r.port ~ ': ' ~ ('OPEN' if r.open else 'closed')) %}{% endfor %}
+<form method="POST" action="{{ url_for('tools.save_evidence') }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input type="hidden" name="case_id" value="{{ case_id }}">
+  <input type="hidden" name="source" value="port_scan">
+  <input type="hidden" name="title" value="Port Scan — {{ host }}">
+  <input type="hidden" name="content" value="Port Scan Results for {{ host }}:
+{% for r in results %}Port {{ r.port }}: {{ 'OPEN' if r.open else 'closed' }}
+{% endfor %}">
+  <div class="tool-actions">
+    <button type="submit" class="btn btn-primary"><i class="ti ti-device-floppy" style="font-size:1rem;vertical-align:middle;margin-right:0.25rem"></i>Save as Evidence</button>
+  </div>
+</form>
+{% endif %}
+{% endblock %}
