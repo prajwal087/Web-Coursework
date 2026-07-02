@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}{{ analyst.username }}{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title"><i class="ti ti-user-circle" style="font-size:1.3rem;color:var(--accent);margin-right:0.4rem;vertical-align:middle"></i>{{ analyst.username }}</h1>
+  <div class="actions">
+    <a href="{{ url_for('analysts.edit', id=analyst.id) }}" class="btn btn-secondary">Edit</a>
+    <form method="POST" action="{{ url_for('analysts.delete', id=analyst.id) }}" style="display:inline">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="btn btn-danger" onclick="return confirm('Delete this analyst?')">Delete</button>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="detail-grid">
+    <span class="detail-label">Username</span>
+    <span class="detail-value">{{ analyst.username }}</span>
+    <span class="detail-label">Email</span>
+    <span class="detail-value">{{ analyst.email }}</span>
+    <span class="detail-label">Role</span>
+    <span class="detail-value"><span class="badge badge-{{ analyst.role }}">{{ analyst.role }}</span></span>
+    <span class="detail-label">Created</span>
+    <span class="detail-value">{{ analyst.created_at | datetimeformat('%Y-%m-%d %H:%M') }}</span>
+  </div>
+</div>
+
+<div class="card">
+  <h2 class="detail-section"><i class="ti ti-folder"></i> Assigned Cases <span class="meta-count">{{ analyst.cases|length }}</span></h2>
+  {% if analyst.cases %}
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Title</th>
+        <th>Severity</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for case in analyst.cases %}
+      <tr>
+        <td><a href="{{ url_for('cases.view', id=case.id) }}">{{ loop.index | row_number }}</a></td>
+        <td><a href="{{ url_for('cases.view', id=case.id) }}">{{ case.title }}</a></td>
+        <td><span class="badge badge-{{ case.severity }}">{{ case.severity }}</span></td>
+        <td><span class="badge badge-{{ case.status }}">{{ case.status }}</span></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-state-text">No cases assigned</div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
