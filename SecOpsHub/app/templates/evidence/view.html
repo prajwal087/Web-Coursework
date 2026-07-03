@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Evidence #{{ evidence.id }}{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title"><i class="ti ti-fingerprint" style="font-size:1.3rem;color:var(--accent);margin-right:0.4rem;vertical-align:middle"></i>{{ evidence.title }}</h1>
+  <div class="actions">
+    <a href="{{ url_for('evidence.edit', id=evidence.id) }}" class="btn btn-secondary">Edit</a>
+    <form method="POST" action="{{ url_for('evidence.delete', id=evidence.id) }}" style="display:inline">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="btn btn-danger" onclick="return confirm('Delete this evidence?')">Delete</button>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="detail-grid">
+    <span class="detail-label">Source</span>
+    <span class="detail-value"><span class="evidence-item-source">{{ evidence.source }}</span></span>
+    <span class="detail-label">Case</span>
+    <span class="detail-value"><a href="{{ url_for('cases.view', id=evidence.case_id) }}" style="color:var(--accent)">Case #{{ evidence.case_id }}</a></span>
+    <span class="detail-label">Created</span>
+    <span class="detail-value">{{ evidence.created_at | datetimeformat('%Y-%m-%d %H:%M') }}</span>
+  </div>
+</div>
+
+<div class="card">
+  <h2 class="detail-section"><i class="ti ti-file-text"></i> Content</h2>
+  <pre class="code-block">{{ evidence.content }}</pre>
+</div>
+{% endblock %}
