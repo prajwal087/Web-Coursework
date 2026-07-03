@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Evidence{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title"><i class="ti ti-fingerprint" style="font-size:1.3rem;color:var(--accent);margin-right:0.35rem;vertical-align:middle"></i>Evidence</h1>
+  <div class="actions">
+    <a href="{{ url_for('evidence.new') }}" class="btn btn-primary">+ Add Evidence</a>
+  </div>
+</div>
+
+<div class="card">
+  <form method="GET" action="{{ url_for('evidence.list') }}" class="search-bar">
+    <i class="ti ti-search search-bar-icon"></i>
+    <input type="text" name="q" class="search-bar-input" placeholder="Search by title or source..." value="{{ search_query or '' }}">
+    <button type="submit" class="btn btn-secondary btn-sm">Search</button>
+    {% if search_query %}<a href="{{ url_for('evidence.list') }}" class="btn btn-ghost btn-sm">Clear</a>{% endif %}
+  </form>
+  {% if evidence_list %}
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Title</th>
+        <th>Source</th>
+        <th>Case</th>
+        <th>Created</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for evidence in evidence_list %}
+      <tr>
+        <td><a href="{{ url_for('evidence.view', id=evidence.id) }}">{{ loop.index | row_number(page) }}</a></td>
+        <td><a href="{{ url_for('evidence.view', id=evidence.id) }}">{{ evidence.title }}</a></td>
+        <td><span class="evidence-item-source">{{ evidence.source }}</span></td>
+        <td><a href="{{ url_for('cases.view', id=evidence.case_id) }}">Case #{{ evidence.case_id }}</a></td>
+        <td>{{ evidence.created_at | datetimeformat('%Y-%m-%d %H:%M') }}</td>
+        <td>
+          <a href="{{ url_for('evidence.edit', id=evidence.id) }}" class="btn btn-secondary btn-sm">Edit</a>
+          <form method="POST" action="{{ url_for('evidence.delete', id=evidence.id) }}" style="display:inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Delete this evidence?')">Delete</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% include 'partials/pagination.html' %}
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-state-icon">&#128203;</div>
+    <div class="empty-state-text">No evidence collected</div>
+    <div class="empty-state-sub">Use security tools or add evidence manually to cases</div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
