@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block title %}Login{% endblock %}
+{% block head %}
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
+{% endblock %}
+{% block body_class %}login-page{% endblock %}
+{% block content_raw %}
+<div class="login-split">
+  <!-- LEFT: Form -->
+  <div class="login-left">
+    <div class="login-left-inner">
+      <div class="login-logo-mark">
+        <i class="ti ti-diamond"></i>
+      </div>
+
+      <h1 class="login-headline">Log In</h1>
+      <p class="login-sub">Please enter your login details below</p>
+
+      <form method="POST" class="login-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="login-flash {{ category }}"><i class="ti ti-alert-triangle"></i> {{ message }}</div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <div class="form-group">
+          <label class="form-label">Username</label>
+          <input type="text" name="username" class="form-input" placeholder="Enter your username" required autofocus spellcheck="false" autocomplete="off">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input type="password" name="password" id="login-password" class="form-input" placeholder="Enter your password" required spellcheck="false" autocomplete="off">
+        </div>
+
+        <div class="login-options">
+          <label class="login-remember">
+            <input type="checkbox" name="remember" checked> Remember me
+          </label>
+          <a href="{{ url_for('auth.register') }}" class="login-forgot">Register</a>
+        </div>
+
+        <button type="submit" class="login-btn">
+          Sign In <i class="ti ti-arrow-right"></i>
+        </button>
+      </form>
+
+      <p class="login-footer-text">&copy; SecOpsHub &mdash; Security Operations Center</p>
+    </div>
+  </div>
+
+  <!-- RIGHT: Preview card -->
+  <div class="login-right">
+    <div class="dash-card">
+
+      <div class="dash-header">
+        <div class="dot-group">
+          <span class="dot dot-green"></span>
+          <span class="dot dot-blue"></span>
+          <span class="dot dot-dark"></span>
+        </div>
+        <span class="title">SOC DASHBOARD</span>
+      </div>
+
+      <div class="charts-row">
+        <div class="chart-box">
+          <div class="chart-title">Cases by status</div>
+          <svg width="170" height="170" viewBox="0 0 80 80">
+            <circle cx="40" cy="40" r="28" fill="none" stroke="#eee" stroke-width="12" />
+            <circle cx="40" cy="40" r="28" fill="none" stroke="var(--status-open)" stroke-width="12"
+                    stroke-dasharray="75.4 113.1" stroke-dashoffset="0" />
+            <circle cx="40" cy="40" r="28" fill="none" stroke="var(--status-in-progress)" stroke-width="12"
+                    stroke-dasharray="37.7 150.8" stroke-dashoffset="-75.4" />
+            <circle cx="40" cy="40" r="28" fill="none" stroke="var(--status-closed)" stroke-width="12"
+                    stroke-dasharray="75.4 113.1" stroke-dashoffset="-113.1" />
+            <text x="40" y="38" text-anchor="middle" class="donut-center">5</text>
+            <text x="40" y="50" text-anchor="middle" class="donut-total-label">total</text>
+          </svg>
+          <div class="legend">
+            <span>Open 2</span> <span>Progress 1</span> <span>Closed 2</span>
+          </div>
+        </div>
+
+        <div class="chart-box">
+          <div class="chart-title">Cases by severity</div>
+          <svg width="170" height="170" viewBox="0 0 80 80">
+            <circle cx="40" cy="40" r="28" fill="none" stroke="#eee" stroke-width="12" />
+            <circle cx="40" cy="40" r="28" fill="none" stroke="var(--severity-low)" stroke-width="12"
+                    stroke-dasharray="75.4 113.1" stroke-dashoffset="0" />
+            <circle cx="40" cy="40" r="28" fill="none" stroke="var(--severity-medium)" stroke-width="12"
+                    stroke-dasharray="75.4 113.1" stroke-dashoffset="-75.4" />
+            <circle cx="40" cy="40" r="28" fill="none" stroke="var(--severity-critical)" stroke-width="12"
+                    stroke-dasharray="37.7 150.8" stroke-dashoffset="-150.8" />
+            <text x="40" y="38" text-anchor="middle" class="donut-center">5</text>
+            <text x="40" y="50" text-anchor="middle" class="donut-total-label">total</text>
+          </svg>
+          <div class="legend">
+            <span>Low 2</span> <span>Med 2</span> <span>High 1</span> <span>Critical 0</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="recent-title">Recent cases</div>
+
+      <div class="case-row">
+        <div class="case-left">
+          <span class="color-bar green"></span>
+          <span class="case-number">#102</span>
+          <span class="case-name">Email</span>
+        </div>
+        <span class="badge-outline low">Low</span>
+      </div>
+
+      <div class="case-row">
+        <div class="case-left">
+          <span class="color-bar orange"></span>
+          <span class="case-number">#105</span>
+          <span class="case-name">Youtube</span>
+        </div>
+        <span class="badge-outline medium">Medium</span>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block layout %}{% endblock %}
