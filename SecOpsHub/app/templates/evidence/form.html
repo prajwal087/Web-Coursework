@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit' if evidence else 'New' }} Evidence{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">{{ 'Edit' if evidence else 'New' }} Evidence</h1>
+  <div class="actions">
+    <a href="{{ url_for('evidence.list') }}" class="btn btn-secondary">Cancel</a>
+  </div>
+</div>
+
+<div class="card">
+  <form method="POST">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="form-group">
+      <label class="form-label">Title</label>
+      <input type="text" name="title" class="form-input" value="{{ evidence.title if evidence else '' }}" required>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Content</label>
+      <textarea name="content" class="form-textarea" style="min-height:200px" required>{{ evidence.content if evidence else '' }}</textarea>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Source</label>
+        <select name="source" class="form-select">
+          <option value="manual" {{ 'selected' if evidence and evidence.source == 'manual' else '' }}>Manual</option>
+          <option value="ip_intel" {{ 'selected' if evidence and evidence.source == 'ip_intel' else '' }}>IP Intelligence</option>
+          <option value="port_scan" {{ 'selected' if evidence and evidence.source == 'port_scan' else '' }}>Port Scan</option>
+          <option value="password_analyzer" {{ 'selected' if evidence and evidence.source == 'password_analyzer' else '' }}>Password Analyzer</option>
+          <option value="cve_feed" {{ 'selected' if evidence and evidence.source == 'cve_feed' else '' }}>CVE Feed</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Case</label>
+        <select name="case_id" class="form-select" required>
+          {% for c in cases %}
+          <option value="{{ c.id }}" {{ 'selected' if preselected_case_id and c.id == preselected_case_id|int else '' }}{{ 'selected' if evidence and evidence.case_id == c.id else '' }}>Case #{{ c.id }}: {{ c.title }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+    <button type="submit" class="btn btn-primary">{{ 'Save Changes' if evidence else 'Add Evidence' }}</button>
+  </form>
+</div>
+{% endblock %}
