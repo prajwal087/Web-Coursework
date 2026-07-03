@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% block title %}Case #{{ case.id }}{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">Case #{{ case.id }}: {{ case.title }}</h1>
+  <div class="actions">
+    <a href="{{ url_for('cases.edit', id=case.id) }}" class="btn btn-secondary">Edit</a>
+    <a href="{{ url_for('evidence.new', case_id=case.id) }}" class="btn btn-primary">+ Add Evidence</a>
+    <form method="POST" action="{{ url_for('cases.delete', id=case.id) }}" style="display:inline">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="btn btn-danger" onclick="return confirm('Delete this case?')">Delete</button>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="detail-grid">
+    <span class="detail-label">Status</span>
+    <span class="detail-value"><span class="badge badge-{{ case.status }}">{{ case.status }}</span></span>
+    <span class="detail-label">Severity</span>
+    <span class="detail-value"><span class="badge badge-{{ case.severity }}">{{ case.severity }}</span></span>
+    <span class="detail-label">Analyst</span>
+    <span class="detail-value">{{ case.username }}</span>
+    <span class="detail-label">Created</span>
+    <span class="detail-value">{{ case.created_at | datetimeformat('%Y-%m-%d %H:%M') }}</span>
+    <span class="detail-label">Updated</span>
+    <span class="detail-value">{{ case.updated_at | datetimeformat('%Y-%m-%d %H:%M') }}</span>
+  </div>
+</div>
+
+{% if case.description %}
+<div class="card">
+  <h2 class="detail-section"><i class="ti ti-align-left"></i> Description</h2>
+  <p class="desc-text">{{ case.description }}</p>
+</div>
+{% endif %}
+
+<div class="card">
+  <div class="card-header">
+    <h2 class="card-title"><i class="ti ti-fingerprint" style="font-size:1.1rem;color:var(--accent);margin-right:0.35rem;vertical-align:middle"></i>Evidence <span class="meta-count">{{ case.evidence_items|length }}</span></h2>
+  </div>
+  {% if case.evidence_items %}
+  <div class="evidence-list">
+    {% for evidence in case.evidence_items %}
+    <div class="evidence-item">
+      <div class="evidence-item-header">
+        <a href="{{ url_for('evidence.view', id=evidence.id) }}" class="evidence-item-title">{{ evidence.title }}</a>
+        <span class="evidence-item-source">{{ evidence.source }}</span>
+        <span class="evidence-item-date">{{ evidence.created_at | datetimeformat('%Y-%m-%d %H:%M') }}</span>
+      </div>
+      <div class="evidence-item-content">{{ evidence.content[:200] }}{% if evidence.content|length > 200 %}...{% endif %}</div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-state-icon">&#128203;</div>
+    <div class="empty-state-text">No evidence attached</div>
+    <div class="empty-state-sub">Use security tools or add evidence manually</div>
+  </div>
+  {% endif %}
+</div>
+
+{% if tasks %}
+<div class="card">
+  <div class="card-header">
+    <h2 class="card-title"><i class="ti ti-book" style="font-size:1.1rem;color:var(--accent);margin-right:0.35rem;vertical-align:middle"></i>Playbook Checklist <span class="meta-count">{{ tasks|length }}</span></h2>
+  </div>
+  {% set ns = namespace(current_pb=None) %}
+  {% for task in tasks %}
+    {% if task.playbook_name != ns.current_pb %}
+      {% if ns.current_pb %}</div>{% endif %}
+      {% set ns.current_pb = task.playbook_name %}
+      <div class="playbook-section" style="margin-bottom:0.5rem;">
+        <h3 style="font-size:0.78rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-muted);padding:0.65rem 1.35rem 0.35rem;font-family:var(--font-mono);border-bottom:1px solid var(--border-subtle);margin:0 1.35rem 0.25rem;">
+          <i class="ti ti-bookmark" style="margin-right:0.3rem;"></i>{{ task.playbook_name or 'Unknown Playbook' }}
+        </h3>
+    {% endif %}
+    <label class="task-item" style="display:flex;align-items:center;gap:0.65rem;padding:0.35rem 1.35rem;cursor:pointer;transition:background 0.1s;">
+      <input type="checkbox" class="task-checkbox" data-task-id="{{ task.id }}" data-case-id="{{ case.id }}"
+             style="accent-color:var(--accent);width:16px;height:16px;cursor:pointer;flex-shrink:0;"
+             {{ 'checked' if task.is_complete else '' }}>
+      <span style="flex:1;font-size:0.83rem;color:var(--text-muted);{{ 'text-decoration:line-through;opacity:0.5' if task.is_complete else '' }}">
+        {{ task.task_description }}
+      </span>
+    </label>
+  {% endfor %}
+  {% if tasks %}</div>{% endif %}
+</div>
+{% endif %}
+
+{% if available_playbooks %}
+<div class="card">
+  <div class="card-header">
+    <h2 class="card-title"><i class="ti ti-bookmark-plus" style="font-size:1.1rem;color:var(--accent);margin-right:0.35rem;vertical-align:middle"></i>Apply Playbook</h2>
+  </div>
+  <form method="POST" action="{{ url_for('cases.apply_playbook', id=case.id) }}" style="padding:0 1.35rem 1rem;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="form-row">
+      <div class="form-group">
+        <select name="playbook_id" class="form-select" required>
+          <option value="">Select a playbook...</option>
+          {% for pb in available_playbooks %}
+          <option value="{{ pb.id }}">{{ pb.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group" style="display:flex;align-items:flex-end;">
+        <button type="submit" class="btn btn-primary">Apply</button>
+      </div>
+    </div>
+  </form>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.querySelectorAll('.task-checkbox').forEach(function(cb) {
+  cb.addEventListener('change', function() {
+    var taskId = this.dataset.taskId;
+    var caseId = this.dataset.caseId;
+    var isComplete = this.checked ? 1 : 0;
+    var checkbox = this;
+    fetch('/cases/' + caseId + '/tasks/' + taskId + '/toggle', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'X-Requested-With': 'XMLHttpRequest',
+        'X-CSRFToken': '{{ csrf_token() }}'
+      },
+      body: 'is_complete=' + isComplete
+    }).then(function(r) {
+      if (!r.ok) { checkbox.checked = !checkbox.checked; }
+    }).catch(function() {
+      checkbox.checked = !checkbox.checked;
+    });
+  });
+});
+</script>
+{% endblock %}
