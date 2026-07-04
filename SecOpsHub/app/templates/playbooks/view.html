@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}{{ playbook.name }}{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title"><i class="ti ti-book" style="font-size:1.3rem;color:var(--accent);margin-right:0.4rem;vertical-align:middle"></i>{{ playbook.name }}</h1>
+  <div class="actions">
+    <a href="{{ url_for('playbooks.edit', id=playbook.id) }}" class="btn btn-secondary">Edit</a>
+    <form method="POST" action="{{ url_for('playbooks.delete', id=playbook.id) }}" style="display:inline">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="btn btn-danger" onclick="return confirm('Delete this playbook?')">Delete</button>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="detail-grid">
+    <span class="detail-label">Steps</span>
+    <span class="detail-value">{{ steps|length }} step{{ 's' if steps|length != 1 }}</span>
+    <span class="detail-label">Created</span>
+    <span class="detail-value">{{ playbook.created_at | datetimeformat('%Y-%m-%d %H:%M') }}</span>
+    <span class="detail-label">Updated</span>
+    <span class="detail-value">{{ playbook.updated_at | datetimeformat('%Y-%m-%d %H:%M') }}</span>
+  </div>
+</div>
+
+{% if playbook.description %}
+<div class="card">
+  <h2 class="detail-section"><i class="ti ti-align-left"></i> Description</h2>
+  <p class="desc-text">{{ playbook.description }}</p>
+</div>
+{% endif %}
+
+<div class="card">
+  <h2 class="detail-section"><i class="ti ti-list-check"></i> Steps</h2>
+  {% if steps %}
+  <ol class="steps-list">
+    {% for step in steps %}
+    <li class="step-item">{{ step }}</li>
+    {% endfor %}
+  </ol>
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-state-text">No steps defined</div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
