@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="SecOpsHub - Security Operations Center">
+  <title>SecOpsHub — {% block title %}Dashboard{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  {% block head %}{% endblock %}
+</head>
+<body class="{% block body_class %}{% endblock %}">
+  <div class="scanline-overlay"></div>
+  <div id="toastContainer" class="toast-container"></div>
+
+  {% block content_raw %}{% endblock %}
+
+{% block layout %}
+  {% if current_user.is_authenticated %}
+  <button id="sidebarToggle" class="sidebar-toggle" aria-label="Toggle navigation menu"><i class="ti ti-menu-2"></i></button>
+  <div id="sidebarOverlay" class="sidebar-overlay"></div>
+  <nav class="sidebar" role="navigation" aria-label="Main navigation">
+    <div class="sidebar-header">
+      <div class="logo">
+        <div class="logo-icon-box" aria-label="SecOpsHub logo">
+          <i class="ti ti-diamond" aria-hidden="true"></i>
+        </div>
+        <span class="logo-text">SecOpsHub</span>
+      </div>
+      <div class="logo-sub">Security Operations Center</div>
+    </div>
+
+    <div class="sidebar-nav">
+      <div class="nav-section-label">WORKSPACE</div>
+      <ul role="menubar">
+        <li role="none">
+          <a href="{{ url_for('dashboard.index') }}" class="nav-item {{ 'active' if request.endpoint == 'dashboard.index' }}" role="menuitem">
+            <i class="ti ti-shield" aria-hidden="true"></i>
+            <span>Dashboard</span>
+          </a>
+        </li>
+        <li role="none">
+          <a href="{{ url_for('cases.list') }}" class="nav-item {{ 'active' if request.endpoint and request.endpoint.startswith('cases') }}" role="menuitem">
+            <i class="ti ti-folder" aria-hidden="true"></i>
+            <span>Cases</span>
+          </a>
+        </li>
+        <li role="none">
+          <a href="{{ url_for('evidence.list') }}" class="nav-item {{ 'active' if request.endpoint and request.endpoint.startswith('evidence') }}" role="menuitem">
+            <i class="ti ti-fingerprint" aria-hidden="true"></i>
+            <span>Evidence</span>
+          </a>
+        </li>
+        <li role="none">
+          <a href="{{ url_for('playbooks.list') }}" class="nav-item {{ 'active' if request.endpoint and request.endpoint.startswith('playbooks') }}" role="menuitem">
+            <i class="ti ti-book" aria-hidden="true"></i>
+            <span>Playbooks</span>
+          </a>
+        </li>
+      </ul>
+
+      <div class="nav-section-label">CONFIG</div>
+      <ul role="menubar">
+        <li role="none">
+          <a href="{{ url_for('analysts.list_view') }}" class="nav-item {{ 'active' if request.endpoint and request.endpoint.startswith('analysts') }}" role="menuitem">
+            <i class="ti ti-users icon-purple" aria-hidden="true"></i>
+            <span>Analysts</span>
+          </a>
+        </li>
+        <li role="none">
+          <a href="{{ url_for('tools.index') }}" class="nav-item {{ 'active' if request.endpoint and request.endpoint.startswith('tools') }}" role="menuitem">
+            <i class="ti ti-tools icon-purple" aria-hidden="true"></i>
+            <span>Tools</span>
+          </a>
+        </li>
+        {% if current_user.role == 'lead' %}
+        <li role="none">
+          <a href="{{ url_for('admin.index') }}" class="nav-item {{ 'active' if request.endpoint and request.endpoint.startswith('admin') }}" role="menuitem">
+            <i class="ti ti-shield-lock icon-purple" aria-hidden="true"></i>
+            <span>Admin</span>
+          </a>
+        </li>
+        {% endif %}
+      </ul>
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="sidebar-status" role="status" aria-live="polite">
+        <span class="status-dot" aria-hidden="true"></span>
+        <span class="status-text">System online &middot; Standby</span>
+      </div>
+      <div class="sidebar-user-section">
+        <div class="user-avatar" aria-label="User initial">{{ current_user.username[:1].upper() }}</div>
+        <div class="user-info">
+          <span class="user-name">{{ current_user.username }}</span>
+          <span class="user-role">{{ current_user.role }}</span>
+        </div>
+        <a href="{{ url_for('profile.index') }}" class="btn-logout" title="Go to profile" aria-label="Profile">
+          <i class="ti ti-user" aria-hidden="true"></i>
+        </a>
+        <form method="POST" action="{{ url_for('auth.logout') }}" style="display:inline;margin:0;padding:0">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn-logout" title="Logout" aria-label="Logout">
+            <i class="ti ti-logout" aria-hidden="true"></i>
+          </button>
+        </form>
+      </div>
+    </div>
+  </nav>
+
+  <main class="main-content" role="main">
+  {% else %}
+  <main class="main-content-full" role="main">
+  {% endif %}
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="flash flash-{{ category }}" role="alert" style="display:none">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+  </main>
+{% endblock layout %}
+
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>
