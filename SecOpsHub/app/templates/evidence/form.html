@@ -28,6 +28,8 @@
           <option value="port_scan" {{ 'selected' if evidence and evidence.source == 'port_scan' else '' }}>Port Scan</option>
           <option value="password_analyzer" {{ 'selected' if evidence and evidence.source == 'password_analyzer' else '' }}>Password Analyzer</option>
           <option value="cve_feed" {{ 'selected' if evidence and evidence.source == 'cve_feed' else '' }}>CVE Feed</option>
+          <option value="email_header_analyzer" {{ 'selected' if evidence and evidence.source == 'email_header_analyzer' else '' }}>Email Header Analyzer</option>
+          <option value="hash_identifier" {{ 'selected' if evidence and evidence.source == 'hash_identifier' else '' }}>Hash Identifier</option>
         </select>
       </div>
       <div class="form-group">
