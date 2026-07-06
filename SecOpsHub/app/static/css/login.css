@@ -1,0 +1,99 @@
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&display=swap');
+
+.login-page{overflow:hidden;background:#fff}
+.login-page .scanline-overlay{display:none}
+
+/* ── Split-screen wrapper ── */
+.login-split{display:flex;min-height:100vh;width:100%}
+
+/* ── LEFT PANEL (form) ── */
+.login-left{flex:0 0 42%;display:flex;align-items:center;justify-content:center;padding:2.5rem;background:#fff;position:relative}
+.login-left::after{content:'';position:absolute;right:0;top:10%;bottom:10%;width:1px;background:linear-gradient(180deg,transparent 0%,rgba(34,211,238,.12) 30%,rgba(34,211,238,.12) 70%,transparent 100%);pointer-events:none}
+.login-left-inner{width:100%;max-width:370px;animation:formSlide .6s ease-out}
+@keyframes formSlide{from{opacity:0;transform:translateX(-20px)}to{opacity:1;transform:translateX(0)}}
+
+/* Logo mark */
+.login-logo-mark{width:40px;height:40px;margin:0 auto 1rem;display:flex;align-items:center;justify-content:center;border-radius:10px;background:linear-gradient(135deg,#009cb8,#22d3ee);position:relative}
+.login-logo-mark i{color:#fff;font-size:1.2rem}
+.login-logo-mark::after{content:'';position:absolute;inset:-3px;border-radius:13px;background:linear-gradient(135deg,rgba(34,211,238,.3),transparent);z-index:-1}
+
+.login-headline{font-family:'Sora',sans-serif;font-size:1.65rem;font-weight:700;color:#111;text-align:center;letter-spacing:-.025em;margin-bottom:.25rem}
+.login-sub{text-align:center;font-size:.82rem;color:#6b7280;margin-bottom:2rem;font-weight:400}
+
+/* Form fields */
+.login-form{width:100%}
+.login-form .form-group{margin-bottom:1.15rem}
+.login-form .form-label{display:block;font-size:.72rem;font-weight:600;color:#374151;margin-bottom:.35rem;letter-spacing:.01em}
+.login-form .form-input{width:100%;padding:.7rem .85rem;background:#fff;border:1.5px solid #e5e7eb;border-radius:8px;color:#111;font-family:inherit;font-size:.85rem;transition:all .2s ease;outline:none}
+.login-form .form-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(34,211,238,.1)}
+.login-form .form-input::placeholder{color:#9ca3af;font-size:.8rem}
+
+/* Checkbox + Forgot row */
+.login-options{display:flex;align-items:center;justify-content:space-between;margin:.85rem 0 1.25rem}
+.login-remember{display:flex;align-items:center;gap:.45rem;cursor:pointer;font-size:.78rem;color:#4b5563}
+.login-remember input[type=checkbox]{width:15px;height:15px;accent-color:var(--accent);cursor:pointer;border-radius:4px}
+.login-forgot{font-size:.78rem;color:var(--accent);font-weight:500;text-decoration:none;transition:opacity .15s}
+.login-forgot:hover{opacity:.75;text-decoration:underline}
+
+/* Submit button */
+.login-btn{width:100%;padding:.75rem;background:linear-gradient(135deg,#0096b4,#007088);color:#fff;font-family:'Sora',sans-serif;font-size:.88rem;font-weight:600;border:none;border-radius:8px;cursor:pointer;transition:all .2s ease;position:relative;overflow:hidden;letter-spacing:.01em}
+.login-btn:hover{box-shadow:0 4px 20px rgba(34,211,238,.3);transform:translateY(-1px)}
+.login-btn:active{transform:translateY(0)}
+.login-btn i{margin-left:.35rem;font-size:.9rem;transition:transform .2s}
+.login-btn:hover i{transform:translateX(3px)}
+
+/* ── RIGHT PANEL (preview) ── */
+.login-right{flex:1;background:linear-gradient(145deg,#0a1628 0%,#0d1f3c 30%,#0f2848 60%,#163564 100%);display:flex;align-items:center;justify-content:center;padding:1.2rem;position:relative;overflow:hidden}
+.login-right::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 70% 60% at 30% 40%,rgba(255,255,255,.06),transparent 60%);pointer-events:none}
+
+/* White card — scaled up */
+.dash-card{background:#fff;border-radius:16px;width:96%;max-width:640px;padding:1.5rem 1.8rem;box-shadow:0 25px 80px rgba(0,0,0,.3),0 8px 32px rgba(0,0,0,.15);position:relative;overflow:hidden}
+
+/* Card header: dots + SOC DASHBOARD */
+.dash-header{display:flex;align-items:center;margin-bottom:1.2rem;padding-bottom:.6rem;border-bottom:1px solid #eef0f5}
+.dot-group{display:flex;gap:7px;align-items:center}
+.dot{width:12px;height:12px;border-radius:50%;display:inline-block}
+.dot-green{background:#2ecc71}
+.dot-blue{background:#3498db}
+.dot-dark{background:#2c3e50}
+.dash-header .title{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#888;margin-left:6px;font-weight:600}
+
+/* Charts row: two equal columns */
+.charts-row{display:flex;gap:14px;margin-bottom:1.2rem}
+.chart-box{flex:1;background:#f4f6f9;border-radius:12px;padding:1rem .6rem .8rem;text-align:center}
+.chart-box .chart-title{font-size:11px;font-weight:600;color:#6b7280;margin-bottom:10px;letter-spacing:.03em}
+.chart-box svg{display:block;margin:0 auto}
+.donut-center{font-size:22px;font-weight:700;fill:#222}
+.donut-total-label{font-size:10px;fill:#999}
+.legend{font-size:10px;color:#555;margin-top:6px;display:flex;flex-wrap:wrap;justify-content:center;gap:0 8px}
+.legend span{white-space:nowrap}
+
+/* Recent cases */
+.recent-title{font-size:13px;font-weight:600;color:#222;margin-bottom:10px;letter-spacing:.01em}
+.case-row{display:flex;justify-content:space-between;align-items:center;padding:10px 8px;background:#fafbfc;border:1px solid #f1f3f6;border-radius:8px;margin-bottom:6px}
+.case-row:last-child{margin-bottom:0}
+.case-left{display:flex;align-items:center;gap:10px}
+.color-bar{width:4px;height:24px;border-radius:2px;flex-shrink:0}
+.color-bar.green{background:#27ae60}
+.color-bar.orange{background:#f39c12}
+.case-number{font-size:12px;color:#aaa;font-weight:600}
+.case-name{font-size:14px;font-weight:600;color:#222}
+.badge-outline{border:1.5px solid;border-radius:6px;padding:4px 12px;font-size:11px;font-weight:700;background:transparent}
+.badge-outline.low{color:var(--severity-low);border-color:var(--severity-low)}
+.badge-outline.medium{color:var(--severity-medium);border-color:var(--severity-medium)}
+
+/* ── Misc ── */
+.login-flash{margin-bottom:1rem;padding:.55rem .75rem;border-radius:8px;font-size:.75rem;display:flex;align-items:center;gap:.45rem;animation:flashSlide .35s ease}
+.login-flash.error{background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.12);color:#dc2626}
+.login-flash i{font-size:.8rem}
+@keyframes flashSlide{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+
+.login-footer-text{text-align:center;font-size:.65rem;color:#9ca3af;margin-top:1.5rem;letter-spacing:.02em}
+
+/* ── Responsive ── */
+@media (max-width:860px){
+  .login-split{flex-direction:column}
+  .login-left{flex:1;padding:2rem 1.5rem}
+  .login-right{display:none}
+  .login-left-inner{max-width:340px}
+}
