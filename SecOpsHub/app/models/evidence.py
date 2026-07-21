@@ -1,5 +1,6 @@
 from datetime import datetime
 
+
 class Evidence:
     def __init__(self, id, title, content, source, created_at, case_id):
         self.id = id
@@ -9,7 +10,7 @@ class Evidence:
         self.created_at = created_at
         self.case_id = case_id
 
- @staticmethod
+    @staticmethod
     def from_row(row):
         if row is None:
             return None
