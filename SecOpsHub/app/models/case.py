@@ -2,7 +2,7 @@ from datetime import datetime
 
 
 class Case:
-    def __init__(self, id, title, description, severity, status, created_at, updated_at, analyst_id):
+    def __init__(self, id, title, description, severity, status, created_at, updated_at, analyst_id, username=None):
         self.id = id
         self.title = title
         self.description = description
@@ -11,6 +11,7 @@ class Case:
         self.created_at = created_at
         self.updated_at = updated_at
         self.analyst_id = analyst_id
+        self.username = username
 
     @staticmethod
     def from_row(row):
@@ -24,8 +25,10 @@ class Case:
             status=row['status'],
             created_at=row.get('created_at'),
             updated_at=row.get('updated_at'),
-            analyst_id=row['analyst_id']
+            analyst_id=row['analyst_id'],
+            username=row.get('username')
         )
+
 
 class CaseTask:
     def __init__(self, id, case_id, task_description, is_complete, source_playbook_id, created_at, playbook_name=None):
@@ -46,3 +49,5 @@ class CaseTask:
             is_complete=row['is_complete'], source_playbook_id=row['source_playbook_id'],
             created_at=row.get('created_at'), playbook_name=row.get('playbook_name')
         )
+
+
