@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 import json
 import logging
 from app.database import get_db
@@ -58,7 +58,7 @@ class PlaybookService:
 
     def create_playbook(self, name, description, steps):
         conn = get_db()
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         try:
             with conn.cursor() as cur:
                 cur.execute(
