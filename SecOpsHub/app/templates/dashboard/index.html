@@ -1,50 +1,369 @@
-import logging
-from app.database import get_db
+{% extends "base.html" %}
+{% block title %}SOC Dashboard{% endblock %}
+{% block head %}{% endblock %}
+{% block content %}
 
-logger = logging.getLogger(__name__)
+<!-- Top bar -->
+<div class="soc-topbar">
+  <div class="soc-topbar-left">
+    <div class="soc-radar">
+      <svg viewBox="0 0 80 80" class="soc-radar-svg">
+        <circle cx="40" cy="40" r="38" fill="none" stroke="rgba(34,211,238,.08)" stroke-width=".5"/>
+        <circle cx="40" cy="40" r="28" fill="none" stroke="rgba(34,211,238,.06)" stroke-width=".5"/>
+        <circle cx="40" cy="40" r="18" fill="none" stroke="rgba(34,211,238,.04)" stroke-width=".5"/>
+        <circle cx="40" cy="40" r="8" fill="none" stroke="rgba(34,211,238,.03)" stroke-width=".5"/>
+        <line x1="40" y1="40" x2="40" y2="2" stroke="rgba(34,211,238,.35)" stroke-width="1" class="soc-radar-sweep"/>
+        <circle cx="40" cy="40" r="2" fill="rgba(34,211,238,.4)"/>
+        <circle cx="50" cy="18" r="2.5" fill="rgba(34,211,238,.6)" class="soc-radar-blip" style="animation-delay:0s"/>
+        <circle cx="56" cy="50" r="1.8" fill="rgba(34,211,238,.5)" class="soc-radar-blip" style="animation-delay:.8s"/>
+        <circle cx="30" cy="54" r="1.5" fill="rgba(59,130,246,.5)" class="soc-radar-blip" style="animation-delay:1.2s"/>
+      </svg>
+    </div>
+    <div>
+      <h1 class="soc-title">SOC Dashboard</h1>
+      <div class="soc-meta">
+        <span class="soc-meta-item"><i class="ti ti-shield-check" style="color:var(--accent)"></i> <strong>{{ current_user.username }}</strong></span>
+        <span class="soc-meta-item" id="dashboard-clock"></span>
+        <span class="soc-meta-item"><span class="soc-dot"></span> All systems nominal</span>
+      </div>
+    </div>
+  </div>
+  <div class="soc-topbar-right">
+    <a href="{{ url_for('cases.new') }}" class="btn btn-primary">
+      <i class="ti ti-plus"></i> New Case
+    </a>
+  </div>
+</div>
 
+<!-- Tactical stat panels -->
+<div class="soc-stats">
+  <div class="soc-stat-panel" style="--tac-color:var(--accent);animation-delay:.05s">
+    <div class="soc-stat-icon"><i class="ti ti-folder"></i></div>
+    <div class="soc-stat-body">
+      <div class="soc-stat-label">Total Cases</div>
+      <div class="soc-stat-value">{{ total_cases }}</div>
+      <div class="soc-stat-trend">Lifetime archive</div>
+    </div>
+  </div>
+  <div class="soc-stat-panel" style="--tac-color:var(--status-open);animation-delay:.10s">
+    <div class="soc-stat-icon"><i class="ti ti-inbox"></i></div>
+    <div class="soc-stat-body">
+      <div class="soc-stat-label">Open</div>
+      <div class="soc-stat-value">{{ open_cases }}</div>
+      <div class="soc-stat-trend">Awaiting triage</div>
+    </div>
+  </div>
+  <div class="soc-stat-panel" style="--tac-color:var(--status-in-progress);animation-delay:.15s">
+    <div class="soc-stat-icon"><i class="ti ti-activity"></i></div>
+    <div class="soc-stat-body">
+      <div class="soc-stat-label">In Progress</div>
+      <div class="soc-stat-value">{{ in_progress_cases }}</div>
+      <div class="soc-stat-trend">Active investigations</div>
+    </div>
+  </div>
+  <div class="soc-stat-panel" style="--tac-color:var(--severity-critical);animation-delay:.20s">
+    <div class="soc-stat-icon"><i class="ti ti-alert-triangle"></i></div>
+    <div class="soc-stat-body">
+      <div class="soc-stat-label">Critical</div>
+      <div class="soc-stat-value">{{ critical_cases }}</div>
+      <div class="soc-stat-trend">Immediate action required</div>
+    </div>
+  </div>
+  <div class="soc-stat-panel" style="--tac-color:var(--severity-low);animation-delay:.25s">
+    <div class="soc-stat-icon"><i class="ti ti-file-text"></i></div>
+    <div class="soc-stat-body">
+      <div class="soc-stat-label">Evidence</div>
+      <div class="soc-stat-value">{{ total_evidence }}</div>
+      <div class="soc-stat-trend">Artifacts collected</div>
+    </div>
+  </div>
+  <div class="soc-stat-panel" style="--tac-color:var(--accent);animation-delay:.30s">
+    <div class="soc-stat-icon"><i class="ti ti-book-2"></i></div>
+    <div class="soc-stat-body">
+      <div class="soc-stat-label">Playbooks</div>
+      <div class="soc-stat-value">{{ total_playbooks }}</div>
+      <div class="soc-stat-trend">Procedures available</div>
+    </div>
+  </div>
+</div>
 
-class ActivityService:
-    def log_activity(self, analyst_id, action, details='', ip_address=None):
-        conn = get_db()
-        try:
-            with conn.cursor() as cur:
-                cur.execute(
-                    """INSERT INTO activity_log (analyst_id, action, details, ip_address)
-                       VALUES (%s, %s, %s, %s)""",
-                    (analyst_id, action, details, ip_address)
-                )
-            conn.commit()
-        except Exception as e:
-            logger.error(f"Error logging activity: {str(e)}")
-        finally:
-            conn.close()
+<!-- Charts section -->
+<div class="soc-charts">
+  <div class="soc-chart-card">
+    <div class="soc-chart-header">
+      <i class="ti ti-pie-chart" style="color:var(--accent)"></i> Cases by Status
+    </div>
+    <div class="soc-chart-body">
+      <div class="soc-chart-wrapper">
+        <canvas id="statusChart"></canvas>
+      </div>
+      <div class="soc-chart-legend">
+        <span class="soc-legend-item"><span class="soc-legend-dot" style="background:var(--status-open)"></span> Open <span class="soc-legend-val">{{ open_cases }}</span></span>
+        <span class="soc-legend-item"><span class="soc-legend-dot" style="background:var(--status-in-progress)"></span> In Progress <span class="soc-legend-val">{{ in_progress_cases }}</span></span>
+        <span class="soc-legend-item"><span class="soc-legend-dot" style="background:var(--status-closed)"></span> Closed <span class="soc-legend-val">{{ closed_cases }}</span></span>
+      </div>
+    </div>
+  </div>
+  <div class="soc-chart-card">
+    <div class="soc-chart-header">
+      <i class="ti ti-pie-chart" style="color:var(--accent)"></i> Cases by Severity
+    </div>
+    <div class="soc-chart-body">
+      <div class="soc-chart-wrapper">
+        <canvas id="severityChart"></canvas>
+      </div>
+      <div class="soc-chart-legend">
+        <span class="soc-legend-item"><span class="soc-legend-dot" style="background:var(--severity-low)"></span> Low <span class="soc-legend-val">{{ severity_counts.low }}</span></span>
+        <span class="soc-legend-item"><span class="soc-legend-dot" style="background:var(--severity-medium)"></span> Medium <span class="soc-legend-val">{{ severity_counts.medium }}</span></span>
+        <span class="soc-legend-item"><span class="soc-legend-dot" style="background:var(--severity-high)"></span> High <span class="soc-legend-val">{{ severity_counts.high }}</span></span>
+        <span class="soc-legend-item"><span class="soc-legend-dot" style="background:var(--severity-critical)"></span> Critical <span class="soc-legend-val">{{ severity_counts.critical }}</span></span>
+      </div>
+    </div>
+  </div>
+</div>
 
-    def get_activity_log(self, analyst_id=None, limit=100):
-        conn = get_db()
-        try:
-            with conn.cursor() as cur:
-                if analyst_id:
-                    cur.execute(
-                        """SELECT * FROM activity_log
-                           WHERE analyst_id = %s
-                           ORDER BY created_at DESC
-                           LIMIT %s""",
-                        (analyst_id, limit)
-                    )
-                else:
-                    cur.execute(
-                        """SELECT * FROM activity_log
-                           ORDER BY created_at DESC
-                           LIMIT %s""",
-                        (limit,)
-                    )
-                return cur.fetchall()
-        except Exception as e:
-            logger.error(f"Error fetching activity log: {str(e)}")
-            raise
-        finally:
-            conn.close()
+<!-- Mission log -->
+<div class="soc-mission-log">
+  <div class="soc-mission-header">
+    <i class="ti ti-history" style="color:var(--accent);font-size:.9rem"></i> Recent Cases
+    <a href="{{ url_for('cases.list') }}" class="btn btn-secondary btn-sm" style="margin-left:auto">View All <i class="ti ti-arrow-right"></i></a>
+  </div>
+  {% if recent_cases %}
+  <div class="soc-mission-list">
+    {% for case in recent_cases %}
+    <a href="{{ url_for('cases.view', id=case.id) }}" class="soc-mission-item">
+      <div class="soc-mission-sev" style="background:{% if case.severity == 'critical' %}var(--severity-critical){% elif case.severity == 'high' %}var(--severity-high){% elif case.severity == 'medium' %}var(--severity-medium){% else %}var(--severity-low){% endif %}"></div>
+      <span class="soc-mission-id">{{ loop.index | row_number }}</span>
+      <span class="soc-mission-title">{{ case.title }}</span>
+      <span class="badge badge-{{ case.severity }}">{{ case.severity }}</span>
+      <span class="soc-mission-date">{{ case.created_at | datetimeformat('%Y-%m-%d %H:%M') }}</span>
+      <span class="soc-mission-analyst">{{ case.analyst.username }}</span>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state" style="padding:2rem">
+    <div class="empty-state-icon">&#128196;</div>
+    <div class="empty-state-text">No cases yet</div>
+    <div class="empty-state-sub">Create your first security case to get started</div>
+    <a href="{{ url_for('cases.new') }}" class="btn btn-primary">Create Case</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
 
+{% block scripts %}
+<script>
+(function() {
+  'use strict';
 
-activity_service = ActivityService()
+  /* ---------- clock ---------- */
+  function updateClock() {
+    var now = new Date();
+    var opts = { weekday:'short', year:'numeric', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false };
+    var el = document.getElementById('dashboard-clock');
+    if (el) el.textContent = now.toLocaleDateString('en-US', opts);
+  }
+  if (document.getElementById('dashboard-clock')) { updateClock(); setInterval(updateClock, 1000); }
+
+  /* ---------- chart config ---------- */
+  var STATUS_LABELS = ['Open', 'In Progress', 'Closed'];
+  var SEV_LABELS    = ['Low', 'Medium', 'High', 'Critical'];
+  var STATUS_COLORS = ['#3b82f6', '#eab308', '#475569'];
+  var SEV_COLORS    = ['#34d399', '#fbbf24', '#fb923c', '#f87171'];
+
+  var STATUS_BG = STATUS_COLORS.map(function(c) { return c + '80'; });
+  var SEV_BG    = SEV_COLORS.map(function(c) { return c + '80'; });
+
+  var FONT_FAMILY = "'JetBrains Mono', monospace";
+  var chartInstances = {};
+
+  /* ---------- center-text plugin (draws total inside the doughnut) ---------- */
+  var centerTextPlugin = {
+    id: 'centerText',
+    beforeDraw: function(chart) {
+      var text = (chart.options.plugins.centerText || {}).text;
+      if (text === undefined || text === null) return;
+      var ctx = chart.ctx, w = chart.width, h = chart.height;
+      ctx.save();
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.font = '700 24px "Plus Jakarta Sans","DM Sans",sans-serif';
+      ctx.fillStyle = 'rgba(226,232,240,0.55)';
+      ctx.fillText(String(text), w / 2, h / 2 - 5);
+      ctx.font = '400 9px ' + FONT_FAMILY;
+      ctx.fillStyle = 'rgba(100,116,139,0.35)';
+      ctx.fillText('total', w / 2, h / 2 + 17);
+      ctx.restore();
+    }
+  };
+
+  /* Register once (harmless with UMD, required for tree-shaken builds) */
+  if (typeof Chart !== 'undefined') {
+    Chart.register(centerTextPlugin);
+  }
+
+  /* ---------- helpers ---------- */
+  function getCanvas(id) { return document.getElementById(id); }
+
+  function destroyChart(id) {
+    if (chartInstances[id]) {
+      try { chartInstances[id].destroy(); } catch (e) {}
+      delete chartInstances[id];
+    }
+  }
+
+  function buildDataset(data, bgColors, borderColors) {
+    return [{
+      data: data,
+      backgroundColor: bgColors,
+      borderColor: borderColors,
+      borderWidth: 2,
+      hoverOffset: 10
+    }];
+  }
+
+  function createChart(id, labels, data, bgColors, borderColors, total) {
+    /* --- CRITICAL: destroy any existing chart before creating --- */
+    destroyChart(id);
+
+    var canvas = getCanvas(id);
+    if (!canvas || typeof Chart === 'undefined') return null;
+
+    /* Force a fixed 2D context size so Chart.js never collapses to 0 */
+    var rect = canvas.parentElement.getBoundingClientRect();
+    if (rect.width > 0 && rect.height > 0) {
+      canvas.width = rect.width * (window.devicePixelRatio || 1);
+      canvas.height = rect.height * (window.devicePixelRatio || 1);
+    }
+
+    try {
+      var inst = new Chart(canvas, {
+        type: 'doughnut',
+        data: {
+          labels: labels,
+          datasets: buildDataset(data, bgColors, borderColors)
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: '72%',
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: 'rgba(10,14,23,0.92)',
+              titleColor: 'var(--text-primary)',
+              bodyColor: 'var(--text-muted)',
+              borderColor: 'rgba(30,39,56,0.5)',
+              borderWidth: 1,
+              padding: 10,
+              bodyFont: { family: FONT_FAMILY, size: 11 },
+              titleFont: { family: FONT_FAMILY, size: 11, weight: 'bold' }
+            },
+            centerText: { text: String(total) }
+          },
+          animation: { animateRotate: true, duration: 900 }
+        }
+      });
+      chartInstances[id] = inst;
+      return inst;
+    } catch (e) {
+      console.warn('Chart init failed:', id, e);
+      return null;
+    }
+  }
+
+  function updateStatValue(label, value) {
+    var panels = document.querySelectorAll('.soc-stat-panel');
+    for (var i = 0; i < panels.length; i++) {
+      var labelEl = panels[i].querySelector('.soc-stat-label');
+      if (labelEl && labelEl.textContent.trim().toLowerCase() === label.toLowerCase()) {
+        var valEl = panels[i].querySelector('.soc-stat-value');
+        if (valEl) valEl.textContent = value;
+        break;
+      }
+    }
+  }
+
+  function updateLegendValue(selector, value) {
+    var el = document.querySelector(selector);
+    if (el) el.textContent = value;
+  }
+
+  /* ---------- server poll ---------- */
+  function fetchAndUpdateCharts() {
+    fetch('/api/stats')
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        /* stat panels */
+        updateStatValue('Total cases', d.cases);
+        updateStatValue('Open', d.open_cases);
+        updateStatValue('In progress', d.in_progress_cases);
+        updateStatValue('Critical', d.severity_counts.critical);
+        updateStatValue('Evidence', d.evidence);
+        updateStatValue('Playbooks', d.playbooks);
+
+        var statusData = [d.open_cases, d.in_progress_cases, d.closed_cases];
+        var sevData    = [d.severity_counts.low, d.severity_counts.medium, d.severity_counts.high, d.severity_counts.critical];
+
+        /* legend counts */
+        updateLegendValue('.soc-chart-card:nth-child(1) .soc-legend-item:nth-child(1) .soc-legend-val', d.open_cases);
+        updateLegendValue('.soc-chart-card:nth-child(1) .soc-legend-item:nth-child(2) .soc-legend-val', d.in_progress_cases);
+        updateLegendValue('.soc-chart-card:nth-child(1) .soc-legend-item:nth-child(3) .soc-legend-val', d.closed_cases);
+        updateLegendValue('.soc-chart-card:nth-child(2) .soc-legend-item:nth-child(1) .soc-legend-val', d.severity_counts.low);
+        updateLegendValue('.soc-chart-card:nth-child(2) .soc-legend-item:nth-child(2) .soc-legend-val', d.severity_counts.medium);
+        updateLegendValue('.soc-chart-card:nth-child(2) .soc-legend-item:nth-child(3) .soc-legend-val', d.severity_counts.high);
+        updateLegendValue('.soc-chart-card:nth-child(2) .soc-legend-item:nth-child(4) .soc-legend-val', d.severity_counts.critical);
+
+        /* update or recreate charts */
+        var statTotal = d.open_cases + d.in_progress_cases + d.closed_cases;
+        var sevTotal  = d.severity_counts.low + d.severity_counts.medium + d.severity_counts.high + d.severity_counts.critical;
+
+        ['statusChart', 'severityChart'].forEach(function(id) {
+          var inst = chartInstances[id];
+          var isStatus = id === 'statusChart';
+          var newData  = isStatus ? statusData : sevData;
+          var bgColors = isStatus ? STATUS_BG : SEV_BG;
+          var bdColors = isStatus ? STATUS_COLORS : SEV_COLORS;
+          var labels   = isStatus ? STATUS_LABELS : SEV_LABELS;
+          var total    = isStatus ? statTotal : sevTotal;
+
+          if (inst) {
+            inst.data.datasets[0].data = newData;
+            inst.options.plugins.centerText.text = String(total);
+            inst.update();
+          } else if (total > 0) {
+            createChart(id, labels, newData, bgColors, bdColors, total);
+          }
+
+          if (total === 0 && inst) {
+            inst.destroy();
+            delete chartInstances[id];
+          }
+        });
+      })
+      .catch(function(e) { console.warn('Stats poll failed:', e); });
+  }
+
+  /* ---------- initial render (deferred until DOM + Chart.js ready) ---------- */
+  function initCharts() {
+    var statusData = [{{ open_cases }}, {{ in_progress_cases }}, {{ closed_cases }}];
+    var sevData    = [{{ severity_counts.low }}, {{ severity_counts.medium }}, {{ severity_counts.high }}, {{ severity_counts.critical }}];
+    var statTotal  = statusData[0] + statusData[1] + statusData[2];
+    var sevTotal   = sevData[0] + sevData[1] + sevData[2] + sevData[3];
+
+    if (statTotal > 0) createChart('statusChart', STATUS_LABELS, statusData, STATUS_BG, STATUS_COLORS, statTotal);
+    if (sevTotal  > 0) createChart('severityChart', SEV_LABELS, sevData, SEV_BG, SEV_COLORS, sevTotal);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initCharts);
+  } else {
+    initCharts();
+  }
+
+  /* ---------- poll every 30s ---------- */
+  setInterval(fetchAndUpdateCharts, 30000);
+})();
+</script>
+{% endblock %}
