@@ -244,7 +244,7 @@ def create_app():
     from app.routes.dashboard import dashboard_bp
     from app.routes.cases import cases_bp
     from app.routes.evidence import evidence_bp
-    from app.routes.playbooks import playbooks_bp
+    from app.routes.playbook import playbooks_bp
     from app.routes.analysts import analysts_bp
     from app.routes.tools import tools_bp
     from app.routes.admin import admin_bp
