@@ -175,21 +175,21 @@ def create_app():
         if request.is_json or request.path.startswith('/api/'):
             return jsonify({'error': 'Bad request'}), 400
         flash('Invalid request. Please check your input.', 'error')
-        return render_template('errors/400.html'), 400
+        return render_template('error/400.html'), 400
     
     @app.errorhandler(403)
     def forbidden(e):
         app.logger.warning(f"403 Forbidden: {request.path}")
         if request.is_json or request.path.startswith('/api/'):
             return jsonify({'error': 'Forbidden'}), 403
-        return render_template('errors/403.html'), 403
+        return render_template('error/403.html'), 403
     
     @app.errorhandler(404)
     def not_found(e):
         app.logger.warning(f"404 Not Found: {request.path}")
         if request.is_json or request.path.startswith('/api/'):
             return jsonify({'error': 'Not found'}), 404
-        return render_template('errors/404.html'), 404
+        return render_template('error/404.html'), 404
     
     @app.errorhandler(405)
     def method_not_allowed(e):
@@ -197,7 +197,7 @@ def create_app():
         if request.is_json or request.path.startswith('/api/'):
             return jsonify({'error': 'Method not allowed'}), 405
         flash('Method not allowed.', 'error')
-        return render_template('errors/405.html'), 405
+        return render_template('error/405.html'), 405
     
     @app.errorhandler(413)
     def payload_too_large(e):
@@ -205,20 +205,20 @@ def create_app():
         if request.is_json or request.path.startswith('/api/'):
             return jsonify({'error': 'Payload too large'}), 413
         flash('Upload size exceeds the limit.', 'error')
-        return render_template('errors/413.html'), 413
+        return render_template('error/413.html'), 413
     
     @app.errorhandler(500)
     def server_error(e):
         app.logger.error(f"500 Server Error: {str(e)}", exc_info=True)
         if request.is_json or request.path.startswith('/api/'):
             return jsonify({'error': 'Internal server error'}), 500
-        return render_template('errors/500.html'), 500
+        return render_template('error/500.html'), 500
     
     @app.errorhandler(429)
     def ratelimit_handler(e):
         app.logger.warning(f"Rate limit exceeded: {request.remote_addr}")
         flash('Too many requests. Please try again later.', 'error')
-        return render_template('errors/429.html'), 429
+        return render_template('error/429.html'), 429
     
     # Template filter for safe date formatting
     @app.template_filter('datetimeformat')
