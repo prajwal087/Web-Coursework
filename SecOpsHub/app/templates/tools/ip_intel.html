@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}IP Intelligence{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title"><i class="ti ti-globe" style="font-size:1.3rem;color:var(--accent);margin-right:0.4rem;vertical-align:middle"></i>IP Intelligence: {{ ip }}</h1>
+  <div class="actions">
+    <a href="{{ url_for('tools.index') }}" class="btn btn-secondary">Back to Tools</a>
+  </div>
+</div>
+
+<div class="result-card">
+  <div class="result-title"><i class="ti ti-info-circle" style="vertical-align:middle;margin-right:0.3rem"></i>Intelligence Results</div>
+  {% if result.error %}
+  <div class="empty-state">
+    <div class="empty-state-text">Error: {{ result.error }}</div>
+  </div>
+  {% else %}
+  {% for key, value in result.items() %}
+  <div class="result-item">
+    <span class="result-key">{{ key }}</span>
+    <span class="result-value">{{ value }}</span>
+  </div>
+  {% endfor %}
+  {% endif %}
+</div>
+
+{% if case_id %}
+<form method="POST" action="{{ url_for('tools.save_evidence') }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input type="hidden" name="case_id" value="{{ case_id }}">
+  <input type="hidden" name="source" value="ip_intel">
+  <input type="hidden" name="title" value="IP Intelligence — {{ ip }}">
+  <input type="hidden" name="content" value="{% for key, value in result.items() %}{{ key }}: {{ value }}
+{% endfor %}">
+  <div class="tool-actions">
+    <button type="submit" class="btn btn-primary"><i class="ti ti-device-floppy" style="font-size:1rem;vertical-align:middle;margin-right:0.25rem"></i>Save as Evidence</button>
+  </div>
+</form>
+{% endif %}
+{% endblock %}

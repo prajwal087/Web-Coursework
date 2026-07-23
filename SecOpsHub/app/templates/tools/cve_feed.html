@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}CVE Feed{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title"><i class="ti ti-alert-triangle" style="font-size:1.3rem;color:var(--accent);margin-right:0.4rem;vertical-align:middle"></i>CVE Feed{% if keyword %}: {{ keyword }}{% endif %}</h1>
+  <div class="actions">
+    <a href="{{ url_for('tools.index') }}" class="btn btn-secondary">Back to Tools</a>
+  </div>
+</div>
+
+{% if error %}
+<div class="result-card">
+  <div class="empty-state">
+    <div class="empty-state-icon">&#9888;</div>
+    <div class="empty-state-text">Error fetching CVEs: {{ error }}</div>
+  </div>
+</div>
+{% elif vulnerabilities %}
+<div class="result-card">
+  <div class="result-title"><i class="ti ti-list-search" style="vertical-align:middle;margin-right:0.3rem"></i>Recent CVEs <span class="meta-count">{{ vulnerabilities|length }}</span></div>
+  {% for item in vulnerabilities %}
+  {% set cve = item.get('cve', {}) %}
+  {% set metrics = cve.get('metrics', {}) %}
+  {% set cvss31 = metrics.get('cvssMetricV31', [{'cvssData': {'baseScore': 0, 'baseSeverity': 'NONE'}}])[0] %}
+  {% set score = cvss31.get('cvssData', {}).get('baseScore', 0) %}
+  {% set severity = cvss31.get('cvssData', {}).get('baseSeverity', 'NONE')|lower %}
+  <div class="cve-card">
+    <div class="cve-id">{{ cve.get('id', 'N/A') }}</div>
+    <div class="cve-desc">{{ cve.get('descriptions', [{'value': 'No description'}])[0].get('value', '')[:200] }}</div>
+    <span class="cve-score {{ 'high' if severity in ['high', 'critical'] else 'medium' if severity == 'medium' else 'low' }}">{{ score }} {{ severity }}</span>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="result-card">
+  <div class="empty-state">
+    <div class="empty-state-text">No CVEs found{% if keyword %} for "{{ keyword }}"{% endif %}</div>
+    <div class="empty-state-sub">Try a different search term</div>
+  </div>
+</div>
+{% endif %}
+
+{% if case_id and vulnerabilities %}
+<form method="POST" action="{{ url_for('tools.save_evidence') }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input type="hidden" name="case_id" value="{{ case_id }}">
+  <input type="hidden" name="source" value="cve_feed">
+  <input type="hidden" name="title" value="CVE Feed{% if keyword %} — {{ keyword }}{% endif %}">
+  <input type="hidden" name="content" value="{% for item in vulnerabilities %}{% set cve = item.get('cve', {}) %}{{ cve.get('id', 'N/A') }}: {{ cve.get('descriptions', [{'value': ''}])[0].get('value', '')[:100] }}
+{% endfor %}">
+  <div class="tool-actions">
+    <button type="submit" class="btn btn-primary"><i class="ti ti-device-floppy" style="font-size:1rem;vertical-align:middle;margin-right:0.25rem"></i>Save as Evidence</button>
+  </div>
+</form>
+{% endif %}
+{% endblock %}

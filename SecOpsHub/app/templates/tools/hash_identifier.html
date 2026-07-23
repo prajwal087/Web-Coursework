@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Hash Identifier{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title"><i class="ti ti-hash" style="font-size:1.3rem;color:var(--accent);margin-right:0.4rem;vertical-align:middle"></i>Hash Identifier</h1>
+  <div class="actions">
+    <a href="{{ url_for('tools.index') }}" class="btn btn-secondary">Back to Tools</a>
+  </div>
+</div>
+
+<div class="result-card">
+  <div class="result-title"><i class="ti ti-search" style="vertical-align:middle;margin-right:0.3rem"></i>Identification Results</div>
+  <div class="result-item">
+    <span class="result-key">hash</span>
+    <span class="result-value" style="font-family:monospace;word-break:break-all">{{ result.hash }}</span>
+  </div>
+  <div class="result-item">
+    <span class="result-key">length</span>
+    <span class="result-value">{{ result.length }}</span>
+  </div>
+  <div class="result-item">
+    <span class="result-key">format</span>
+    <span class="result-value">{{ 'Hex' if result.is_hex else 'Non-hex' }}</span>
+  </div>
+  <div style="margin-top:1.5rem">
+    <h3 style="color:var(--text-primary);margin-bottom:0.75rem;font-size:0.95rem">&#128220; Possible Types</h3>
+    {% for t in result.possible_types %}
+    <div class="result-item">
+      <span class="result-value" style="font-family:monospace">{{ t }}</span>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+{% if case_id %}
+<form method="POST" action="{{ url_for('tools.save_evidence') }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input type="hidden" name="case_id" value="{{ case_id }}">
+  <input type="hidden" name="source" value="hash_identifier">
+  <input type="hidden" name="title" value="Hash Identifier — {{ result.possible_types[0] }}">
+  <input type="hidden" name="content" value="Hash: {{ result.hash }}
+Length: {{ result.length }}
+Format: {{ 'Hex' if result.is_hex else 'Non-hex' }}
+Possible types: {{ result.possible_types | join(', ') }}">
+  <div class="tool-actions">
+    <button type="submit" class="btn btn-primary"><i class="ti ti-device-floppy" style="font-size:1rem;vertical-align:middle;margin-right:0.25rem"></i>Save as Evidence</button>
+  </div>
+</form>
+{% endif %}
+{% endblock %}
