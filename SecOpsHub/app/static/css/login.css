@@ -90,6 +90,9 @@
 
 .login-footer-text{text-align:center;font-size:.65rem;color:#9ca3af;margin-top:1.5rem;letter-spacing:.02em}
 
+.form-error{font-size:.72rem;color:#dc2626;margin-top:.3rem;font-weight:500}
+.form-group.has-error .form-input{border-color:#dc2626}
+
 /* ── Responsive ── */
 @media (max-width:860px){
   .login-split{flex-direction:column}
