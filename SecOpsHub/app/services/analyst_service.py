@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 import logging
 from app.database import get_db
 from app.models.analyst import Analyst
@@ -123,7 +123,7 @@ class AnalystService:
         analyst_obj = Analyst(None, username, email, '', role)
         analyst_obj.set_password(password)
         conn = get_db()
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         try:
             with conn.cursor() as cur:
                 cur.execute(
@@ -186,6 +186,13 @@ class AnalystService:
         conn = get_db()
         try:
             with conn.cursor() as cur:
+                cur.execute("DELETE FROM activity_log WHERE analyst_id = %s", (analyst_id,))
+                cur.execute("DELETE FROM sessions WHERE analyst_id = %s", (analyst_id,))
+                cur.execute("SELECT id FROM cases WHERE analyst_id = %s", (analyst_id,))
+                for row in cur.fetchall():
+                    cur.execute("DELETE FROM case_tasks WHERE case_id = %s", (row['id'],))
+                    cur.execute("DELETE FROM evidence WHERE case_id = %s", (row['id'],))
+                cur.execute("DELETE FROM cases WHERE analyst_id = %s", (analyst_id,))
                 cur.execute("DELETE FROM analysts WHERE id = %s", (analyst_id,))
             conn.commit()
             logger.info(f"Analyst {analyst_id} deleted")
