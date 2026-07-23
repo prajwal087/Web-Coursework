@@ -109,11 +109,13 @@ class CaseService:
         conn = get_db()
         try:
             with conn.cursor() as cur:
+                cur.execute("DELETE FROM evidence WHERE case_id = %s", (case_id,))
+                cur.execute("DELETE FROM case_tasks WHERE case_id = %s", (case_id,))
                 cur.execute("DELETE FROM cases WHERE id = %s", (case_id,))
             conn.commit()
             logger.info(f"Case {case_id} deleted")
         except Exception as e:
-            logger.error(f"Error deleting case {case_id}: {str(e)}")
+            logger.error(f"Error deleting case {case_id}: {str(e)}", exc_info=True)
             raise
         finally:
             conn.close()
