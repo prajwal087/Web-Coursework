@@ -2,6 +2,7 @@
 
 A Security Operations Center (SOC) web app for case management, evidence tracking, and incident response playbooks. Built with Flask and MySQL.
 
+## Youtube link : https://youtu.be/z96nhO2v8Ok
 ## Features
 
 - Dashboard with live case stats and Chart.js visualizations
